@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Jason Kridner <jkridner@beagleboard.org>
+# SPDX-License-Identifier: Apache-2.0
+
+manifest:
+  self:
+    west-commands: scripts/west-commands.yml
+
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+
+  projects:
+    - name: zephyr
+      remote: upstream
+      #revision: 1f03dcfa0c50f6aee653d2c1434bd256ba6cd15f
+      revision: f00f379f7dafcc2e55225493bd737beff34fbdc3
+      import:
+        name-allowlist:
+          - hal_ti
+          - cmsis_6
+          - cmsis-dsp
+          - mcuboot
+          - mbedtls
+          - zcbor
