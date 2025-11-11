@@ -102,14 +102,14 @@ int main(void)
 	inet_pton(AF_INET6, SEND_IP, &send_addr.sin6_addr);
 
 	for (;;) {
-		setled(1);
 		k_usleep(10);
-		setled(0);
 		LOG_DBG("Disabling network");
 		netdeviceapi->stop(netdevice);
 		rc = pm_device_action_run(uart, PM_DEVICE_ACTION_SUSPEND);
 		LOG_DBG("UART suspend rc=%d", rc);
+		setled(0);
 		k_sleep(K_SECONDS(SLEEP_S));
+		setled(1);
 		LOG_DBG("Enabling network");
 		netdeviceapi->start(netdevice);
 		k_usleep(100); // not sure how long to wait for interface to be "up"
