@@ -81,7 +81,7 @@ void setled(int on)
 
 int main(void)
 {
-	int rc;
+	int rc_s, rc_r;
 	netdeviceapi = netdevice->api;
 
 	printk("Reached main()\n");
@@ -101,16 +101,16 @@ int main(void)
 		k_usleep(10);
 		printk("Disabling network\n");
 		netdeviceapi->stop(netdevice);
-		rc = pm_device_action_run(uart, PM_DEVICE_ACTION_SUSPEND);
-		printk("UART suspend rc=%d\n", rc);
 		setled(0);
+		rc_s = pm_device_action_run(uart, PM_DEVICE_ACTION_SUSPEND);
 		k_sleep(K_SECONDS(SLEEP_S));
+		rc_r = pm_device_action_run(uart, PM_DEVICE_ACTION_RESUME);
+		printk("UART suspend rc=%d\n", rc_s);
+		printk("UART resume rc=%d\n", rc_r);
 		setled(1);
 		printk("Enabling network\n");
 		netdeviceapi->start(netdevice);
 		k_usleep(100); // not sure how long to wait for interface to be "up"
-		rc = pm_device_action_run(uart, PM_DEVICE_ACTION_RESUME);
-		printk("UART resume rc=%d\n", rc);
 		printk("Sending test value over network\n");
 		send_test_value();
 	}
