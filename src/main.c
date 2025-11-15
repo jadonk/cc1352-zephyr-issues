@@ -58,6 +58,8 @@ static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 static const struct device * const uart = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 static const struct ieee802154_radio_api * netdeviceapi;
 static const struct device * const netdevice = DEVICE_DT_GET(DT_NODELABEL(ieee802154g));
+static const struct device * const adc = DEVICE_DT_GET(DT_NODELABEL(adc0));
+static const struct adc_dt_spec an_mb1_dt = ADC_DT_SPEC_GET_BY_NAME(DT_PATH(zephyr_user),an_mb1);
 
 #define SEND_IP "ff02::1"
 static const char * const outstr = "TEST";
@@ -81,8 +83,14 @@ void setled(int on)
 
 int main(void)
 {
-	int rc_s, rc_r;
+	int rc, rc_s, rc_r;
 	netdeviceapi = netdevice->api;
+	uint16_t an_mb1_buf;
+	struct adc_sequence an_mb1_seq = {
+		.buffer = &an_mb1_buf,
+		.buffer_size = sizeof(an_mb1_buf),
+	};
+	int32_t an_mb1_val;
 
 	printk("Reached main()\n");
 
@@ -108,6 +116,15 @@ int main(void)
 		printk("UART suspend rc=%d\n", rc_s);
 		printk("UART resume rc=%d\n", rc_r);
 		setled(1);
+		rc = adc_channel_setup_dt(&an_mb1_dt);
+		if(rc < 0) printk("adc_channel_setup_dt(AN_MB1) failed: %d", rc);
+		rc = adc_sequence_init_dt(&an_mb1_dt, &an_mb1_seq);
+		if(rc != 0) printk("adc_sequence_init_dt(AN_MB1) failed: %d", rc);
+		rc = adc_read_dt(&an_mb1_dt, &an_mb1_seq);
+		if(rc != 0) printk("adc_read_dt(AN_MB1) failed: %d", rc);
+		an_mb1_val = (int32_t)an_mb1_buf;
+		rc = adc_raw_to_millivolts_dt(&an_mb1_dt, &an_mb1_val);
+		if(rc != 0) printk("adc_raw_to_millivolts(AN_MB1) failed: %d", rc);
 		printk("Enabling network\n");
 		netdeviceapi->start(netdevice);
 		k_usleep(100); // not sure how long to wait for interface to be "up"
