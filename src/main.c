@@ -167,38 +167,6 @@ static inline void force_lf_rcosc(void)
     while (OSCClockSourceGet(OSC_SRC_CLK_LF) != OSC_RCOSC_LF) { /* spin */ }
 }
 
-#if 0
-static void measure_hf_xosc(void)
-{
-	uint32_t src_clk_hf = OSCClockSourceGet(OSC_SRC_CLK_HF);
-	uint32_t src_clk_lf = OSCClockSourceGet(OSC_SRC_CLK_LF);
-	printk("HF source: 0x%08x, LF source: %s\n", src_clk_hf, lf_src_name(src_clk_lf));
-
-	/* Make sure XOSC_HF is running (and switch to it) */
-	OSCHF_TurnOnXosc();
-	while (!OSCHF_AttemptToSwitchToXosc()) {
-		k_busy_wait(50); /* ~50 us spin */
-	}
-
-	uint32_t amp_mv = OSCHF_DebugGetCrystalAmplitude();
-	uint32_t exp_mv = OSCHF_DebugGetExpectedAverageCrystalAmplitude();
-	printk("XOSC_HF amplitude: %lu mV (expected %lu mV, Δ=%ld mV)\n",
-	amp_mv, exp_mv, (long)amp_mv - (long)exp_mv);
-
-	/* Optional: estimate drive level using SWRA495 Eq.5 (set your C0/CL/ESR): */
-	const double f   = 48e6;         /* HF freq */
-	const double CL  = 8e-12;        /* effective load cap you’re using */
-	const double C0  = 1.2e-12;      /* crystal shunt cap from datasheet */
-	const double ESR = 60.0;         /* ohms, crystal ESR at 48 MHz */
-	const double Vpp = amp_mv / 1000.0; /* treat returned amplitude as Vpp (V) */
-	double DL_w = 2.0 * ESR * pow(M_PI * f * (CL + C0) * Vpp, 2.0);
-	printk("Estimated drive level: %.3f µW\n", DL_w * 1e6);
-
-	/* Switch back */
-	OSCHF_SwitchToRcOscTurnOffXosc();
-}
-#endif
-
 /* This should run before network bring-up */
 static int cc_init()
 {
