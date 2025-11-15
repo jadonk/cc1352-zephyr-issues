@@ -22,6 +22,7 @@
 #include <zephyr/sys/printk.h>
 #include <math.h>
 #include <string.h>
+#include <zephyr/net/ieee802154_radio.h>
 
 static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 static const struct device * const uart = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
@@ -61,6 +62,7 @@ static void read_an_mb1()
 
 int main(void)
 {
+	const struct ieee802154_radio_api * netdeviceapi = netdevice->api;
 	setled(0);
 	printk("Reached main()\n");
 
@@ -68,7 +70,9 @@ int main(void)
 	setled(1);
 	read_an_mb1();
 	setled(0);
+	netdeviceapi->stop(netdevice);
 	k_sleep(K_SECONDS(1));
+	netdeviceapi->start(netdevice);
 	read_an_mb1();
 
 	printk("Exiting main()\n");
