@@ -33,7 +33,6 @@ jobs:
           $HOME/zephyr-sdk-0.17.0/setup.sh -t arm-zephyr-eabi -c
 
       - name: Build issue for BeagleConnect Freedom
-        working-directory: issue
         run: |
           west init -l ..
           west update
