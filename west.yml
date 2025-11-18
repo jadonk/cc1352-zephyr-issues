@@ -8,12 +8,14 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: jadonk
+      url-base: https://github.com/jadonk
 
   projects:
     - name: zephyr
-      remote: upstream
-      #revision: 1f03dcfa0c50f6aee653d2c1434bd256ba6cd15f
-      revision: f00f379f7dafcc2e55225493bd737beff34fbdc3
+      remote: jadonk
+      path: zephyr
+      revision: pm-fixes
       import:
         name-allowlist:
           - hal_ti
