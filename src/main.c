@@ -41,10 +41,10 @@ static void dump_irq_state(const char *tag) {
   uint32_t iser = NVIC->ISER[idx];
   uint32_t ispr = NVIC->ISPR[idx];
 
-  LOG_INF("[%s] PRIMASK=%u BASEPRI=0x%02x", tag, primask, basepri);
-  LOG_INF("[%s] NVIC->ISER[%u]=0x%08x ISPR[%u]=0x%08x", tag, idx, iser, idx,
+  LOG_DBG("[%s] PRIMASK=%u BASEPRI=0x%02x", tag, primask, basepri);
+  LOG_DBG("[%s] NVIC->ISER[%u]=0x%08x ISPR[%u]=0x%08x", tag, idx, iser, idx,
           ispr);
-  LOG_INF("[%s] ADC IRQ %d enabled=%d pending=%d", tag, ADC_IRQ,
+  LOG_DBG("[%s] ADC IRQ %d enabled=%d pending=%d", tag, ADC_IRQ,
           irq_is_enabled(ADC_IRQ), (ispr & bit) ? 1 : 0);
 }
 
@@ -52,8 +52,8 @@ static void dump_aux_adc_flags(const char *tag) {
   uint32_t evflags = HWREG(AUX_EVCTL_BASE + AUX_EVCTL_O_EVTOMCUFLAGS);
   uint32_t adcctl = HWREG(AUX_ANAIF_BASE + AUX_ANAIF_O_ADCCTL);
 
-  LOG_INF("[%s] AUX_EVCTL.EVTOMCUFLAGS = 0x%08x", tag, evflags);
-  LOG_INF("[%s] AUX_ANAIF.ADCCTL       = 0x%08x", tag, adcctl);
+  LOG_DBG("[%s] AUX_EVCTL.EVTOMCUFLAGS = 0x%08x", tag, evflags);
+  LOG_DBG("[%s] AUX_ANAIF.ADCCTL       = 0x%08x", tag, adcctl);
 }
 
 int main(void) {
@@ -78,25 +78,23 @@ int main(void) {
   }
 
   while (1) {
-    LOG_INF("Sleeping 5s before measurement");
-    k_sleep(K_SECONDS(5));
+    LOG_INF("Sleeping 1s before measurement");
+    k_sleep(K_SECONDS(1));
 
     /* --- AN_MB1 read --- */
-    LOG_INF("AN_MB1 read");
-
-    LOG_DBG("Before adc_channel_setup_dt(an_mb1)");
+    LOG_DBG("Calling adc_channel_setup_dt(an_mb1)");
     r = adc_channel_setup_dt(&an_mb1_dt);
-    LOG_DBG("After adc_channel_setup_dt(an_mb1) rc=%d", r);
+    if(r != 0) LOG_ERR("adc_channel_setup_dt(an_mb1) rc=%d", r);
 
-    LOG_DBG("Before adc_sequence_init_dt(an_mb1)");
+    LOG_DBG("Calling adc_sequence_init_dt(an_mb1)");
     r = adc_sequence_init_dt(&an_mb1_dt, &mb1_seq);
-    LOG_DBG("After adc_sequence_init_dt(an_mb1) rc=%d", r);
+    if(r != 0) LOG_ERR("adc_sequence_init_dt(an_mb1) rc=%d", r);
 
-    LOG_DBG("Before adc_read_dt(an_mb1)");
+    LOG_DBG("Calling adc_read_dt(an_mb1)");
     dump_irq_state("an_mb1");
     dump_aux_adc_flags("an_mb1");
     r = adc_read_dt(&an_mb1_dt, &mb1_seq);
-    LOG_DBG("After adc_read_dt(an_mb1) rc=%d", r);
+    if(r != 0) LOG_ERR("adc_read_dt(an_mb1) rc=%d", r);
 
     if (r == 0) {
       LOG_INF("AN_MB1 raw: %u", mb1_buf);
@@ -105,17 +103,17 @@ int main(void) {
     //return 0;
 
     /* --- AN_MB2 read: 256 samples --- */
-    LOG_INF("AN_MB2 read, %d samples", SAMPLES);
+    LOG_DBG("AN_MB2 read, %d samples", SAMPLES);
 
     for (size_t j = 0; j < SAMPLES; j++) {
-      LOG_DBG("AN_MB2 sample %u", (unsigned)j);
-
+      LOG_DBG("Calling adc_channel_setup_dt(an_mb2) (%u)", (unsigned)j);
       r = adc_channel_setup_dt(&an_mb2_dt);
       if (r < 0) {
-        LOG_ERR("adc_channel_setup_dt(an_mb2) failed: %d", r);
+        LOG_ERR("adc_channel_setup_dt(an_mb2) rc=%d", r);
         break;
       }
 
+      LOG_DBG("Calling adc_sequence_init_dt(an_mb2)");
       r = adc_sequence_init_dt(&an_mb2_dt, &mb2_seq);
       if (r != 0) {
         LOG_ERR("adc_sequence_init_dt(an_mb2) failed: %d", r);
@@ -123,15 +121,18 @@ int main(void) {
       }
 
       dump_irq_state("an_mb2");
+      LOG_DBG("Calling adc_read_dt(an_mb2)");
       r = adc_read_dt(&an_mb2_dt, &mb2_seq);
       if (r != 0) {
-        LOG_ERR("adc_read_dt(an_mb2) failed: %d", r);
-        break;
+        LOG_ERR("adc_read_dt(an_mb2) (%u) failed: %d", (unsigned)j, r);
+      } else {
+        LOG_DBG("AN_MB2 raw: %u", mb2_buf);
       }
-
-      LOG_DBG("AN_MB2 raw = %u", mb2_buf);
       /* Uncomment if you want ~1 kHz sampling spacing */
       // k_sleep(K_MSEC(1));
+    }
+    if (r == 0) {
+      LOG_INF("AN_MB2 last raw: %u", mb2_buf);
     }
   }
 
